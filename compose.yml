@@ -1,9 +1,3 @@
-# documentation: https://docs.erpnext.com/
-# slogan: ERPNext is the world's best free and open source ERP.
-# tags: business, apps, CRM, eCommerce, accounting, inventory, point of sale, project management, open-source
-# logo: svgs/erpnext.svg
-# port: 8080
-
 services:
   builder:
     build:
@@ -96,11 +90,11 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$$ADMIN_PASSWORD --db-root-username=root --db-root-password=$$DB_ROOT_PASSWORD --install-app erpnext --set-default $$ERPNEXT_SITE_NAME;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$$ADMIN_PASSWORD --db-root-username=root --db-root-password=$$DB_ROOT_PASSWORD --install-app app_manager --set-default $$SITE_NAME;
     environment:
       ADMIN_PASSWORD: ${SERVICE_PASSWORD_CREATESITE}
       DB_ROOT_PASSWORD: ${SERVICE_PASSWORD_MARIADBROOT}
-      ERPNEXT_SITE_NAME: ${SERVICE_FQDN_FRONTEND}
+      SITE_NAME: ${SERVICE_FQDN_FRONTEND}
     depends_on:
       db:
         condition: service_healthy
