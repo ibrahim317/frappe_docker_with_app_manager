@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     entrypoint: ["true"]
   backend:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     deploy:
@@ -28,7 +28,7 @@ services:
 
   configurator:
     exclude_from_hc: true
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     deploy:
@@ -59,7 +59,7 @@ services:
 
   create-site:
     exclude_from_hc: true
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     deploy:
@@ -125,7 +125,7 @@ services:
       - db-data:/var/lib/mysql
 
   frontend:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     depends_on:
@@ -157,7 +157,7 @@ services:
       start_period: 15m
 
   queue-long:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     depends_on:
@@ -186,7 +186,7 @@ services:
       retries: 5
 
   queue-short:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     depends_on:
@@ -251,7 +251,7 @@ services:
       retries: 5
 
   scheduler:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     depends_on:
@@ -278,7 +278,7 @@ services:
       retries: 5
 
   websocket:
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     deploy:
@@ -298,7 +298,7 @@ services:
 
   migration:
     exclude_from_hc: true
-    image: frappe-with-app-manager:latest
+    image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
     deploy:
