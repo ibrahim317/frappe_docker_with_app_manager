@@ -1,21 +1,6 @@
 {
-    "frappe": {
-        "resolution": {
-            "commit_hash": null,
-            "branch": null
-        },
-        "required": [],
-        "idx": 1,
-        "version": "16.0.0-dev"
-    },
     "app_manager": {
-        "is_repo": true,
-        "resolution": {
-            "commit_hash": "6c7b25763945dddb4cdc2fe0520f8ad011fa9c64",
-            "branch": "develop"
-        },
-        "required": [],
-        "idx": 2,
-        "version": "0.0.1"
+        "url": "https://github.com/ibrahim317/frappe_app_manager",
+        "branch": "develop"
     }
 }

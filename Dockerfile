@@ -110,7 +110,7 @@ COPY apps.json /opt/frappe/apps.json
 
 USER frappe
 
-ARG FRAPPE_BRANCH=version-15
+ARG FRAPPE_BRANCH=develop
 ARG FRAPPE_PATH=https://github.com/frappe/frappe
 
 RUN bench init \
