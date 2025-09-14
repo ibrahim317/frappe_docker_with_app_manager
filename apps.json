@@ -1,6 +1,6 @@
-{
-    "app_manager": {
+[
+    {
         "url": "https://github.com/ibrahim317/frappe_app_manager",
         "branch": "develop"
     }
-}
+]
