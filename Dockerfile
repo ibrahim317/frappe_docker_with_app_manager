@@ -132,7 +132,9 @@ ARG APP_UPDATE_TIMESTAMP=1
 COPY --chown=frappe:frappe scripts/check-app-updates.sh /opt/frappe/check-app-updates.sh
 
 RUN cd /home/frappe/frappe-bench && \
-    bench get-app --apps_path=/opt/frappe/apps.json
+    jq -r '.[] | "\(.url) --branch \(.branch // "develop")"' /opt/frappe/apps.json | while read -r url branch; do \
+        bench get-app $url $branch; \
+    done
 
 FROM base AS backend
 
