@@ -1,10 +1,4 @@
 services:
-  builder:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ibrahim317/frappe-with-app-manager:latest
-    entrypoint: ["true"]
   backend:
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
