@@ -3,17 +3,20 @@ services:
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
     deploy:
       restart_policy:
         condition: on-failure
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     environment:
       DB_HOST: db
       DB_PORT: "3306"
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     healthcheck:
       test: ["CMD-SHELL", "wait-for-it -t 15 localhost:8000 || exit 1"]
       interval: 10s
@@ -33,23 +36,45 @@ services:
       - bash
       - -c
     command:
-      - >
-        ls -1 apps > sites/apps.txt;
-        bench set-config -g db_host $$DB_HOST;
-        bench set-config -gp db_port $$DB_PORT;
-        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
-        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
-        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
-        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+      - |
+        set -e
+        { printf 'frappe\n'; ls -1 apps | grep -v '^frappe$' | sort; } > sites/apps.txt
+        cat > sites/sitecustomize.py <<'PY'
+        import os, sys
+        APPS_DIR = '/home/frappe/frappe-bench/apps'
+        APPS_TXT = os.path.join(os.path.dirname(__file__), 'apps.txt')
+        try:
+            with open(APPS_TXT, 'r', encoding='utf-8') as f:
+                for line in f:
+                    name = line.strip()
+                    if not name:
+                        continue
+                    p = os.path.join(APPS_DIR, name)
+                    if os.path.isdir(p) and p not in sys.path:
+                        sys.path.insert(0, p)
+        except Exception:
+            pass
+        PY
+        for app in $(ls -1 apps); do
+          if [ -d "apps/$app" ] && { [ -f "apps/$app/setup.py" ] || [ -f "apps/$app/pyproject.toml" ]; }; then
+            /home/frappe/frappe-bench/env/bin/pip install -e "apps/$app"
+          fi
+        done
+        bench set-config -g db_host $$DB_HOST
+        bench set-config -gp db_port $$DB_PORT
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE"
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE"
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE"
+        bench set-config -gp socketio_port $$SOCKETIO_PORT
     environment:
       DB_HOST: db
       DB_PORT: "3306"
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: "9000"
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
 
@@ -63,7 +88,6 @@ services:
         condition: none
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     entrypoint:
@@ -154,6 +178,8 @@ services:
       start_period: 15m
 
   queue-long:
+    environment:
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
@@ -172,7 +198,6 @@ services:
       - long,default,short
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -184,6 +209,8 @@ services:
       retries: 5
 
   queue-short:
+    environment:
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
@@ -202,7 +229,6 @@ services:
       - short,default
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -250,6 +276,8 @@ services:
       retries: 5
 
   scheduler:
+    environment:
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
@@ -266,7 +294,6 @@ services:
       - schedule
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -297,6 +324,8 @@ services:
       retries: 5
 
   migration:
+    environment:
+      PYTHONPATH: /home/frappe/frappe-bench/apps
     exclude_from_hc: true
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
@@ -316,7 +345,6 @@ services:
         bench --site all set-config -p pause_scheduler 0;
     volumes:
       - apps:/home/frappe/frappe-bench/apps
-      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
 
@@ -327,7 +355,6 @@ volumes:
   sites:
   apps:
   logs:
-  env:
 
 networks:
   frappe_network:
