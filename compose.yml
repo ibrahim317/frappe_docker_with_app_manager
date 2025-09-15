@@ -8,6 +8,7 @@ services:
         condition: on-failure
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     environment:
@@ -48,8 +49,9 @@ services:
       SOCKETIO_PORT: "9000"
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logsservice-v4ocgo844gkc0kks8cwkowgo
+      - logs:/home/frappe/frappe-bench/logs
 
   create-site:
     exclude_from_hc: true
@@ -61,6 +63,7 @@ services:
         condition: none
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     entrypoint:
@@ -169,6 +172,7 @@ services:
       - long,default,short
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -198,6 +202,7 @@ services:
       - short,default
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -261,6 +266,7 @@ services:
       - schedule
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     healthcheck:
@@ -310,6 +316,7 @@ services:
         bench --site all set-config -p pause_scheduler 0;
     volumes:
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
 
@@ -320,6 +327,7 @@ volumes:
   sites:
   apps:
   logs:
+  env:
 
 networks:
   frappe_network:
