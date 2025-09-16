@@ -3,6 +3,13 @@ services:
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
     deploy:
       restart_policy:
         condition: on-failure
@@ -11,10 +18,24 @@ services:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     environment:
-      DB_HOST: db
-      DB_PORT: "3306"
+      - DB_HOST=db
+      - DB_PORT=3306
+      # Coolify-provided var passthrough
+      - SERVICE_URL_FRONTEND_8080
+      # Frappe/bench configuration
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - SOCKETIO_PORT=9000
+      # Nginx template vars for reverse proxy inside the same container
+      - BACKEND=localhost:8000
+      - SOCKETIO=localhost:9000
+      - UPSTREAM_REAL_IP_ADDRESS=localhost
+      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
+      - UPSTREAM_REAL_IP_RECURSIVE=off
+      - PROXY_READ_TIMEOUT=120
+      - CLIENT_MAX_BODY_SIZE=50m
     healthcheck:
-      test: ["CMD-SHELL", "wait-for-it -t 15 localhost:8000 || exit 1"]
+      test: ["CMD-SHELL", "wait-for-it -t 15 localhost:8080 && wait-for-it -t 15 localhost:8000 && wait-for-it -t 15 localhost:9000 || exit 1"]
       interval: 10s
       timeout: 60s
       retries: 90
@@ -96,6 +117,8 @@ services:
         condition: service_healthy
       redis-queue:
         condition: service_started
+      backend:
+        condition: service_healthy
 
   db:
     image: mariadb:10.6
@@ -118,95 +141,6 @@ services:
     volumes:
       - db-data:/var/lib/mysql
 
-  frontend:
-    image: ibrahim317/frappe-with-app-manager:latest
-    networks:
-      - frappe_network
-    depends_on:
-      backend:
-        condition: service_healthy
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - nginx-entrypoint.sh
-    environment:
-      - SERVICE_URL_FRONTEND_8080
-      - BACKEND=backend:8000
-      - SOCKETIO=websocket:9000
-      - UPSTREAM_REAL_IP_ADDRESS=localhost
-      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
-      - UPSTREAM_REAL_IP_RECURSIVE=off
-      - PROXY_READ_TIMEOUT=120
-      - CLIENT_MAX_BODY_SIZE=50m
-    volumes:
-      - env:/home/frappe/frappe-bench/env
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    healthcheck:
-      test: ["CMD-SHELL", "wait-for-it -t 15 localhost:8080 || exit 1"]
-      interval: 10s
-      timeout: 60s
-      retries: 90
-      start_period: 15m
-
-  queue-long:
-    image: ibrahim317/frappe-with-app-manager:latest
-    networks:
-      - frappe_network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis-queue:
-        condition: service_healthy
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - bench
-      - worker
-      - --queue
-      - long,default,short
-    volumes:
-      - env:/home/frappe/frappe-bench/env
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'bash -c ":> /dev/tcp/redis-queue/6379 && :> /dev/tcp/db/3306"'
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  queue-short:
-    image: ibrahim317/frappe-with-app-manager:latest
-    networks:
-      - frappe_network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis-queue:
-        condition: service_healthy
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - bench
-      - worker
-      - --queue
-      - short,default
-    volumes:
-      - env:/home/frappe/frappe-bench/env
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'bash -c ":> /dev/tcp/redis-queue/6379 && :> /dev/tcp/db/3306"'
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis-queue:
     image: redis:6.2-alpine
@@ -244,52 +178,7 @@ services:
       timeout: 5s
       retries: 5
 
-  scheduler:
-    image: ibrahim317/frappe-with-app-manager:latest
-    networks:
-      - frappe_network
-    depends_on:
-      db:
-        condition: service_healthy
-      redis-queue:
-        condition: service_healthy
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - bench
-      - schedule
-    volumes:
-      - env:/home/frappe/frappe-bench/env
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'bash -c ":> /dev/tcp/redis-queue/6379 && :> /dev/tcp/db/3306"'
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  websocket:
-    image: ibrahim317/frappe-with-app-manager:latest
-    networks:
-      - frappe_network
-    deploy:
-      restart_policy:
-        condition: on-failure
-    command:
-      - node
-      - /home/frappe/frappe-bench/apps/frappe/socketio.js
-    volumes:
-      - env:/home/frappe/frappe-bench/env
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    healthcheck:
-      test: ["CMD-SHELL", "wait-for-it -t 15 localhost:9000 || exit 1"]
-      interval: 5s
-      timeout: 20s
-      retries: 5
 
   migration:
     exclude_from_hc: true
