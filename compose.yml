@@ -1,5 +1,5 @@
 services:
-  backend:
+  app:
     image: ibrahim317/frappe-with-app-manager:latest
     networks:
       - frappe_network
@@ -21,7 +21,7 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       # Coolify-provided var passthrough
-      - SERVICE_URL_FRONTEND_8080
+      - SERVICE_URL_APP_8080
       # Frappe/bench configuration
       - REDIS_CACHE=redis-cache:6379
       - REDIS_QUEUE=redis-queue:6379
@@ -109,7 +109,7 @@ services:
     environment:
       ADMIN_PASSWORD: ${SERVICE_PASSWORD_CREATESITE}
       DB_ROOT_PASSWORD: ${SERVICE_PASSWORD_MARIADBROOT}
-      SITE_NAME: ${SERVICE_FQDN_FRONTEND}
+      SITE_NAME: ${SERVICE_FQDN_APP}
     depends_on:
       db:
         condition: service_healthy
@@ -117,7 +117,7 @@ services:
         condition: service_healthy
       redis-queue:
         condition: service_started
-      backend:
+      app:
         condition: service_healthy
 
   db:
