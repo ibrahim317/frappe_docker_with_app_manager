@@ -105,16 +105,13 @@ RUN apt-get update \
     libbz2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# apps.json includes
-COPY apps.json /opt/frappe/apps.json
-
 USER frappe
 
 ARG FRAPPE_BRANCH=develop
 ARG FRAPPE_PATH=https://github.com/frappe/frappe
 
+# Create frappe-bench with just frappe framework first (this layer will be cached)
 RUN bench init \
-    --apps_path=/opt/frappe/apps.json \
     --frappe-branch=${FRAPPE_BRANCH} \
     --frappe-path=${FRAPPE_PATH} \
     --no-procfile \
@@ -123,8 +120,20 @@ RUN bench init \
     --verbose \
     /home/frappe/frappe-bench && \
   cd /home/frappe/frappe-bench && \
-  echo "{}" > sites/common_site_config.json && \
-  find apps -mindepth 1 -path "*/.git" | xargs rm -fr
+  echo "{}" > sites/common_site_config.json
+
+# Copy apps.json and install apps in separate layer (this will be rebuilt when apps.json changes)
+COPY --chown=frappe:frappe apps.json /opt/frappe/apps.json
+
+# Build arg to force app updates (pass --build-arg APP_UPDATE_TIMESTAMP=$(date +%s) to force rebuild)
+ARG APP_UPDATE_TIMESTAMP=1
+
+# Copy the update check script
+COPY --chown=frappe:frappe scripts/check-app-updates.sh /opt/frappe/check-app-updates.sh
+
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --apps_path=/opt/frappe/apps.json && \
+    find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
 FROM base AS backend
 
